@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat Sekolah</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="auth-container" class="card">
+    <h2 id="form-title">Login</h2>
+
+    <form id="login-form">
+      <input type="email" id="login-email" placeholder="Email" required>
+      <input type="password" id="login-password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+
+    <form id="register-form" style="display:none;">
+      <input type="text" id="reg-nama" placeholder="Nama Lengkap" required>
+      <input type="email" id="reg-email" placeholder="Email" required>
+      <input type="password" id="reg-password" placeholder="Password (min 6 karakter)" required>
+      <select id="reg-kelas">
+        <option disabled selected>Pilih Kelas</option>
+        ${[...Array(12).keys()].map(i => `<option value="${i+1}">${i+1}</option>`).join('')}
+      </select>
+      <select id="reg-urutan">
+        <option disabled selected>Pilih Urutan Kelas</option>
+        ${[...Array(10).keys()].map(i => `<option value="${i+1}">${i+1}</option>`).join('')}
+      </select>
+      <button type="submit">Register</button>
+    </form>
+
+    <p id="toggle-form">Belum punya akun? <a href="#" onclick="toggleForms()">Register di sini</a></p>
+    <p id="auth-message"></p>
+  </div>
+
+  <div id="chat-container" class="card" style="display:none;">
+    <h2>Chat Sekolah</h2>
+    <div id="chat-box"></div>
+    <form id="chat-form">
+      <input type="text" id="chat-input" placeholder="Tulis pesan..." required>
+      <button type="submit">Kirim</button>
+    </form>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
