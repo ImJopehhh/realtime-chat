@@ -7,14 +7,26 @@ const firebaseConfig = {
   appId: "1:864862750726:web:5e9ed7379e633df5e0db87"  
 }
 
+// Konfigurasi Firebase
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Elemen UI
 const loginForm = document.getElementById('login-form');
 const regForm = document.getElementById('register-form');
-const chatContainer = document.getElementById('chat-container');
 const authContainer = document.getElementById('auth-container');
+const chatContainer = document.getElementById('chat-container');
+const chatForm = document.getElementById('chat-form');
 const chatBox = document.getElementById('chat-box');
 const chatInput = document.getElementById('chat-input');
 const authMsg = document.getElementById('auth-message');
@@ -22,18 +34,32 @@ const authMsg = document.getElementById('auth-message');
 let currentUser = null;
 let userInfo = {};
 
+// Fungsi saat status login berubah
 auth.onAuthStateChanged(async user => {
   if (user) {
-    currentUser = user;
-    const doc = await db.collection('users').doc(user.uid).get();
-    userInfo = doc.data();
-    showChat();
-    listenMessages();
+    try {
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        await auth.signOut();
+        showLogin();
+        authMsg.textContent = 'Akun belum lengkap. Silakan daftar ulang.';
+        return;
+      }
+      currentUser = user;
+      userInfo = doc.data();
+      showChat();
+      listenMessages();
+    } catch (e) {
+      console.error('Gagal ambil data user:', e);
+      showLogin();
+      authMsg.textContent = 'Terjadi kesalahan. Coba lagi.';
+    }
   } else {
     showLogin();
   }
 });
 
+// Toggle form login/register
 function toggleForms() {
   const login = document.getElementById('login-form');
   const register = document.getElementById('register-form');
@@ -49,17 +75,20 @@ function toggleForms() {
   }
 }
 
+// Proses Login
 loginForm.onsubmit = async (e) => {
   e.preventDefault();
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value.trim();
   try {
     await auth.signInWithEmailAndPassword(email, password);
+    authMsg.textContent = '';
   } catch (err) {
     authMsg.textContent = 'Email atau password salah.';
   }
 };
 
+// Proses Register
 regForm.onsubmit = async (e) => {
   e.preventDefault();
   const nama = document.getElementById('reg-nama').value.trim();
@@ -86,24 +115,32 @@ regForm.onsubmit = async (e) => {
     toggleForms();
     authMsg.textContent = 'Pendaftaran berhasil. Silakan login.';
   } catch (err) {
-    authMsg.textContent = 'Email sudah terdaftar.';
+    console.error(err);
+    authMsg.textContent = 'Email sudah digunakan.';
   }
 };
 
+// Tampilkan form login
 function showLogin() {
   authContainer.style.display = 'block';
   chatContainer.style.display = 'none';
+  loginForm.style.display = 'block';
+  regForm.style.display = 'none';
+  document.getElementById('form-title').textContent = 'Login';
 }
 
+// Tampilkan halaman chat
 function showChat() {
   authContainer.style.display = 'none';
   chatContainer.style.display = 'block';
 }
 
-document.getElementById('chat-form').onsubmit = async (e) => {
+// Kirim pesan
+chatForm.onsubmit = async (e) => {
   e.preventDefault();
   const pesan = chatInput.value.trim();
-  if (pesan) {
+  if (!pesan) return;
+  try {
     await db.collection('chats').add({
       uid: currentUser.uid,
       nama: userInfo.nama,
@@ -113,9 +150,12 @@ document.getElementById('chat-form').onsubmit = async (e) => {
       waktu: firebase.firestore.FieldValue.serverTimestamp()
     });
     chatInput.value = '';
+  } catch (err) {
+    console.error('Gagal kirim pesan:', err);
   }
 };
 
+// Ambil dan tampilkan pesan real-time
 function listenMessages() {
   db.collection('chats')
     .orderBy('waktu')
@@ -125,16 +165,18 @@ function listenMessages() {
       snapshot.forEach(doc => {
         const data = doc.data();
         const el = document.createElement('div');
-        el.classList.add('message');
+        el.className = 'message';
         el.innerHTML = `<strong>${data.nama} (${data.kelas}-${data.urutan})</strong>: ${data.pesan}`;
         chatBox.appendChild(el);
-        chatBox.scrollTop = chatBox.scrollHeight;
       });
+      chatBox.scrollTop = chatBox.scrollHeight;
     }, err => {
-      chatBox.innerHTML = '<p style="color:red;">Gagal memuat chat. Klik tombol refresh jika perlu.</p>';
+      console.error('Snapshot error:', err);
+      chatBox.innerHTML = '<p style=\"color:red\">Gagal memuat pesan. Coba refresh halaman.</p>';
     });
 }
 
+// Logout
 function logout() {
   auth.signOut();
 }
